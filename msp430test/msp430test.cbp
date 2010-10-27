@@ -29,9 +29,11 @@
 			<Add option="-Os" />
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="general.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="serial.h" />
 		<Extensions>
 			<envvars />
 			<code_completion />
