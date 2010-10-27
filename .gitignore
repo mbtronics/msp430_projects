@@ -1,0 +1,6 @@
+*.elf
+*.depend
+*.layout
+*.o
+bin/
+obj/
