@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 const int MAX_INT = 65535;
 
 static void __inline__ delay(register unsigned int n);

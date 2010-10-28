@@ -4,6 +4,8 @@
 #define     TXD                   BIT1                      // TXD on P1.1
 #define     RXD                   BIT2                      // RXD on P1.2
 
+#define ABS(x) ( (x) < 0 ? (-(x)) : (x) )
+
 void ConfigureTimerUart(void);
 void SendChar(unsigned int Data);
 void SendString(char * String);
@@ -42,14 +44,6 @@ void ConfigureTimerUart(void)
 void SendChar(unsigned int Data)
 {
     TXByte = Data;
-
-    asm(						// Re-implement timer capture in assembly
-    "JMP 2f \n"
-    "1: \n"
-    "MOV &0x0170,&0x0172 \n"
-    "2: \n"
-    "CMP &0x0170,&0x0172\n"
-    "JNZ 1b \n");
     CCR0 += Bitime;  			    // Some time till first bit
     BitCnt = 0xA;                             // Load Bit counter, 8data + ST/SP
     TXByte |= 0x100;                        // Add mark stop bit to TXByte
@@ -78,4 +72,32 @@ interrupt(TIMERA0_VECTOR) TIMERA0_ISR(void)
             BitCnt --;
         }
     }
+}
+
+static char nibble_to_char(unsigned char nibble)
+{
+    if (nibble < 0xA)
+        return nibble + '0';
+    return nibble - 0xA + 'A';
+}
+
+void SendInt(int n)
+{
+    int32_t m;
+    bool in_leading_zeroes = true;
+
+    if (n < 0)
+        SendChar('-');
+
+    n = ABS(n);
+
+    for (m = 1000000000; m != 1; m/=10)
+    {
+        if ((n / m) != 0)
+            in_leading_zeroes = false;
+        if (!in_leading_zeroes)
+            SendChar(nibble_to_char(n / m));
+        n = n % m;
+    }
+    SendChar(nibble_to_char(n));
 }

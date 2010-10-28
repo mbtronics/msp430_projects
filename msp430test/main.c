@@ -28,7 +28,7 @@ void TogglePause(void);
 void Next(void);
 
 unsigned int Volume = 0;
-unsigned int VolumeDirection = VOLUME_UP;
+bool VolumeUp = true;
 const unsigned int MaxVol = 5;
 
 int main(void)
@@ -103,7 +103,7 @@ void Next(void)
 
 void ChangeVolume(void)
 {
-    if (VolumeDirection == VOLUME_UP)
+    if (VolumeUp)
     {
         if (Volume < MaxVol)
         {
@@ -113,7 +113,7 @@ void ChangeVolume(void)
 
         if (Volume == MaxVol)
         {
-            VolumeDirection = VOLUME_DOWN;
+            VolumeUp = false;
         }
     }
     else
@@ -126,7 +126,7 @@ void ChangeVolume(void)
 
         if (Volume == 0)
         {
-            VolumeDirection = VOLUME_UP;
+            VolumeUp = true;
         }
     }
 }

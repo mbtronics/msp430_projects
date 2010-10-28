@@ -29,6 +29,7 @@
 			<Add option="-Os" />
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="Kiss2Server.py" />
 		<Unit filename="general.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
