@@ -9,7 +9,7 @@
 #include "general.h"
 #include "serial.h"
 
-#define SAMPLES 64  // number of samples to take
+#define SAMPLES 32  // number of samples to take
 
 #define     BUTTON      BIT3
 #define     BUTTON_OUT  P1OUT     //Port 1 output register
@@ -24,6 +24,11 @@
 
 #define VOLUME_UP   0
 #define VOLUME_DOWN 1
+
+#define     LED0                  BIT0
+#define     LED1                  BIT1
+#define     LED_DIR               P1DIR
+#define     LED_OUT               P1OUT
 
 void InitializeIr(void);
 void InitializeClocks(void);
@@ -42,20 +47,60 @@ volatile static uint8_t times_index = 0;
 
 int main(void)
 {
+    int i;
     unsigned int Counter=0, Overflows=0;
 
     StopWatchdog();
     InitializeClocks();
+
+    LED_DIR |= LED0;
+    LED_DIR |= LED1;
+
+    LED_OUT &= ~LED0;
+    LED_OUT &= ~LED1;
+
     InitializeButton();
     InitializeIr();
     eint();
 
-    ConfigureTimerUart();
 
-    SendString("KISS V2.0\n\0");
+
+    //SendString("KISS V2.0\n\0");
 
     while(1)
     {
+
+        if (times_index >= SAMPLES)
+        {
+            P1IE &= ~IR_BIT;    // interrupt disable
+ConfigureTimerUart();
+            for (i=0; i<times_index; ++i)
+            {
+
+    if (times[i] < 40)
+    {
+        SendChar('0');
+    }
+    else if (times[i] >= 40 && times[i] <= 70)
+    {
+        SendChar('1');
+    }
+    else
+    {
+        SendChar('2');
+    }
+
+                //SendInt(times[i]);
+                SendChar(',');
+            }
+            SendChar('\n');
+            times_index = 0;
+
+    InitializeIr();
+
+            //P1IE |= IR_BIT;    // interrupt enable
+        }
+
         Counter = 0;
         Overflows = 0;
 
@@ -90,12 +135,9 @@ int main(void)
 
 interrupt(PORT1_VECTOR) P1_ISR(void)
 {
-    ConfigureTimerUart();
-    SendString("Interupt port 1\n");
-
     if ((P1IFG & IR_BIT) == IR_BIT)
     {
-        SendString("IR!\n");
+        LED_OUT ^= LED0;
         IrDecode();
     }
 
@@ -104,26 +146,19 @@ interrupt(PORT1_VECTOR) P1_ISR(void)
 
 void IrDecode(void)
 {
-    int i;
-
-    if (times_index >= SAMPLES)
-    {
-        for (i=0; i<times_index; ++i)
-        {
-            SendInt(times[i]);
-            SendChar(',');
-        }
-        SendChar('\n');
-        times_index = 0;
-    }
-
     times[times_index++] = TAR/32;
+
     P1IES ^= IR_BIT;
     TAR = 0;
 }
 
 void InitializeIr(void)
 {
+    // TimerA SMCLK in UP mode
+    TACTL = TASSEL_2 | MC_2;
+    // Set TACCR0, starts timer
+    TACCR0 = 0xFFFF;
+
     times_index = 0;
 
     P1IES |= IR_BIT;    // falling edge
