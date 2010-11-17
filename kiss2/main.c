@@ -9,72 +9,37 @@
 #include "general.h"
 #include "serial.h"
 
-#define     BUTTON      BIT3
-#define     BUTTON_OUT  P1OUT     //Port 1 output register
-#define     BUTTON_DIR  P1DIR     //Port 1 direction register (0=input, 1=output)
-#define     BUTTON_IN   P1IN      //Port 1 input register
-#define     BUTTON_IE   P1IE      //Port 1 interrupt enable register
-#define     BUTTON_IES  P1IES     //Port 1 interrupt edge register (0=0>1, 1=1>0)
-#define     BUTTON_IFG  P1IFG     //Port 1 interrupt flag register
-#define     BUTTON_REN  P1REN     //Port 1 resistor enable register
-
-#define VOLUME_UP   0
-#define VOLUME_DOWN 1
-
 void InitializeClocks(void);
-void InitializeButton(void);
-void ChangeVolume(void);
-void TogglePause(void);
-void Next(void);
-
-unsigned int Volume = 0;
-bool VolumeUp = true;
-const unsigned int MaxVol = 5;
+void InitializePort1(void);
 
 int main(void)
 {
-    unsigned int Counter=0, Overflows=0;
-
     StopWatchdog();
     InitializeClocks();
     ConfigureTimerUart();
-    InitializeButton();
+    InitializePort1();
+
     eint();
 
-    SendString("KISS V2.0\n\0");
+    SendString("Starting\n\0");
 
     while(1)
     {
-        Counter = 0;
-        Overflows = 0;
-
-        while(~BUTTON_IN & BUTTON)
+        if (~P1IN & BIT5)
         {
-            ++Counter;
-
-            if (Counter == MAX_INT)
-            {
-                ++Overflows;
-
-                if (Overflows > 1)
-                {
-                    ChangeVolume();
-                }
-            }
+            SendString("P1.5 = 0\n\0");
         }
-
-        if (Overflows < 2)
+        else
         {
-            if (Overflows == 0 && Counter > 1000 && Counter < 50000)
-            {
-                Next();
-            }
-            else if (Overflows > 0 || Counter >= 50000)
-            {
-                TogglePause();
-            }
+            SendString("P1.6 = 1\n\0");
         }
     }
+}
+
+void InitializePort1(void)
+{
+    P1REN &= ~BIT5;  //disable pull-up/down
+    P1DIR &= ~BIT5; //input
 }
 
 void InitializeClocks(void)
@@ -84,48 +49,4 @@ void InitializeClocks(void)
   BCSCTL2 &= ~(DIVS_3);                         // SMCLK = DCO / 8 = 1MHz
 }
 
-void InitializeButton(void)                 // Configure Push Button
-{
-  BUTTON_DIR &= ~BUTTON;    //input
-  BUTTON_REN |= BUTTON;     //enable pull-up resistor
-}
 
-void TogglePause(void)
-{
-    SendString("toggle pause\n\0");
-}
-
-void Next(void)
-{
-    SendString("next\n\0");
-}
-
-void ChangeVolume(void)
-{
-    if (VolumeUp)
-    {
-        if (Volume < MaxVol)
-        {
-            ++Volume;
-            SendString("volume up\n\0");
-        }
-
-        if (Volume == MaxVol)
-        {
-            VolumeUp = false;
-        }
-    }
-    else
-    {
-        if (Volume > 0)
-        {
-            --Volume;
-            SendString("volume down\n\0");
-        }
-
-        if (Volume == 0)
-        {
-            VolumeUp = true;
-        }
-    }
-}
