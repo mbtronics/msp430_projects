@@ -43,6 +43,13 @@ void ConfigureTimerUart(void)
 // Function Transmits Character from TXByte
 void SendChar(unsigned int Data)
 {
+  asm(						// Re-implement timer capture in assembly
+  "JMP 2f \n"
+  "1: \n"
+  "MOV &0x0170,&0x0172 \n"
+  "2: \n"
+  "CMP &0x0170,&0x0172\n"
+  "JNZ 1b \n");
     TXByte = Data;
     CCR0 += Bitime;  			    // Some time till first bit
     BitCnt = 0xA;                             // Load Bit counter, 8data + ST/SP
@@ -100,4 +107,12 @@ void SendInt(int n)
         n = n % m;
     }
     SendChar(nibble_to_char(n));
+}
+
+void SerialPortBootDelay(void)
+{
+    int i;
+
+    for (i=0; i<200; ++i)
+        delay(50000);
 }

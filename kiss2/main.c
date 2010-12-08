@@ -18,9 +18,6 @@
 #define     BUTTON_IFG  P1IFG     //Port 1 interrupt flag register
 #define     BUTTON_REN  P1REN     //Port 1 resistor enable register
 
-#define VOLUME_UP   0
-#define VOLUME_DOWN 1
-
 void InitializeClocks(void);
 void InitializeButton(void);
 void ChangeVolume(void);
@@ -34,9 +31,9 @@ const unsigned int MaxVol = 5;
 int main(void)
 {
     unsigned int Counter=0, Overflows=0;
-
     StopWatchdog();
     InitializeClocks();
+    SerialPortBootDelay();
     ConfigureTimerUart();
     InitializeButton();
     eint();
